@@ -1,0 +1,1081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Plan Slowgain · Daco</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Plan Dieta">
+<meta name="theme-color" content="#0B120E">
+<link rel="manifest" href="manifest.json">
+<link id="touch-icon" rel="apple-touch-icon">
+<script>
+(function(){
+  var c=document.createElement('canvas');c.width=c.height=180;
+  var x=c.getContext('2d');
+  // background
+  x.fillStyle='#0B120E';x.fillRect(0,0,180,180);
+  // checkmark
+  x.strokeStyle='#5BE49B';x.lineWidth=20;x.lineCap='round';x.lineJoin='round';
+  x.beginPath();x.moveTo(50,94);x.lineTo(79,122);x.lineTo(132,58);x.stroke();
+  var ico=document.getElementById('touch-icon');
+  if(ico)ico.href=c.toDataURL('image/png');
+  // also generate manifest icons via blob URLs
+  function makeIcon(size){
+    var cv=document.createElement('canvas');cv.width=cv.height=size;
+    var cx=cv.getContext('2d');
+    cx.fillStyle='#0B120E';cx.fillRect(0,0,size,size);
+    cx.strokeStyle='#5BE49B';cx.lineWidth=size*0.11;cx.lineCap='round';cx.lineJoin='round';
+    var s=size/180;
+    cx.beginPath();cx.moveTo(50*s,94*s);cx.lineTo(79*s,122*s);cx.lineTo(132*s,58*s);cx.stroke();
+    return cv.toDataURL('image/png');
+  }
+  // patch manifest icons at runtime for Android PWA
+  try{
+    var link=document.querySelector('link[rel="manifest"]');
+    var mf={name:"Plan Slowgain · Daco",short_name:"Plan Dieta",start_url:"./",display:"standalone",background_color:"#0B120E",theme_color:"#0B120E",icons:[{src:makeIcon(192),sizes:"192x192",type:"image/png"},{src:makeIcon(512),sizes:"512x512",type:"image/png"}]};
+    var blob=new Blob([JSON.stringify(mf)],{type:"application/json"});
+    link.href=URL.createObjectURL(blob);
+  }catch(e){}
+})();
+</script>
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"></script>
+<style>
+html,body{margin:0;padding:0;background:#0B120E;min-height:100vh;font-family:'Onest',-apple-system,sans-serif;}
+#root{min-height:100vh;display:flex;align-items:flex-start;justify-content:center;}
+.app{width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;background:#0B120E;color:#F4F7F5;position:relative;overflow:hidden;}
+:root{--accent:#5BE49B;--accent-dim:rgba(91,228,155,0.12);--accent-glow:rgba(91,228,155,0.3);--bg:#0B120E;--card:#141D17;--txt:#F4F7F5;--txt2:rgba(244,247,245,0.52);--line:rgba(255,255,255,0.07);}
+/* header */
+.hdr{padding:52px 22px 0;display:flex;flex-direction:column;gap:12px;flex-shrink:0;}
+.hdr-row{display:flex;align-items:flex-start;justify-content:space-between;}
+.hdate{font-size:24px;font-weight:800;letter-spacing:-0.02em;line-height:1.1;margin:0;}
+.hicons{display:flex;gap:8px;}
+.ibtn{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);color:var(--txt);cursor:pointer;padding:0;}
+.ibtn:active{background:rgba(255,255,255,0.10);}
+.hrow2{display:flex;align-items:center;gap:10px;}
+.badge{font-size:11px;font-weight:700;letter-spacing:0.03em;color:var(--accent);background:var(--accent-dim);border:1px solid rgba(91,228,155,0.2);border-radius:999px;padding:4px 10px;white-space:nowrap;cursor:pointer;}
+.pbar{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.08);overflow:hidden;}
+.pfill{height:100%;border-radius:2px;background:var(--accent);transition:width 0.4s;}
+/* phase badge */
+.phase-row{display:flex;align-items:center;gap:8px;padding:0 22px;margin-top:2px;}
+.phase-pill{font-size:10.5px;font-weight:700;letter-spacing:0.04em;padding:3px 9px;border-radius:999px;}
+.phase-1{background:rgba(91,228,155,0.08);color:var(--accent);border:1px solid rgba(91,228,155,0.15);}
+.phase-2{background:rgba(232,193,88,0.10);color:#E8C158;border:1px solid rgba(232,193,88,0.2);}
+.phase-sub{font-size:11px;color:var(--txt2);}
+/* meals */
+.meals{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:9px;padding:16px 22px 16px;scrollbar-width:none;}
+.meals::-webkit-scrollbar{display:none;}
+.mcard{display:flex;align-items:flex-start;gap:11px;background:var(--card);border:1px solid rgba(255,255,255,0.04);border-radius:16px;padding:14px 13px;box-sizing:border-box;transition:background 0.2s,border-color 0.2s;}
+.mcard.done{background:#0F1611;border-color:rgba(91,228,155,0.12);}
+.mcard.done .mname,.mcard.done .mitems{opacity:0.45;}
+.checkwrap{width:38px;height:38px;margin:-5px -3px -5px -5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:0;}
+.check{width:23px;height:23px;border-radius:50%;box-sizing:border-box;border:1.5px solid rgba(255,255,255,0.22);display:flex;align-items:center;justify-content:center;transition:background 0.18s,border-color 0.18s;}
+.check svg{opacity:0;transform:scale(0.5);transition:opacity 0.18s,transform 0.18s;}
+.check.on{background:var(--accent);border-color:var(--accent);}
+.check.on svg{opacity:1;transform:scale(1);}
+.mbody{display:flex;flex-direction:column;gap:4px;min-width:0;flex:1;}
+.mname{font-size:15px;font-weight:700;letter-spacing:-0.01em;margin:0;}
+.mitems{font-size:12.5px;line-height:1.55;color:var(--txt2);margin:0;}
+.ing{background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;border-bottom:1px dotted rgba(255,255,255,0.22);}
+.ing:active{color:var(--txt);}
+.ing.swapped{color:var(--accent);border-bottom-color:rgba(91,228,155,0.4);}
+.ing.bonus{color:#E8C158;border-bottom-color:rgba(232,193,88,0.35);}
+.sep{user-select:none;}
+.mkcal{flex-shrink:0;font-size:11px;font-weight:700;color:var(--accent);background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.06);border-radius:999px;padding:3px 8px;white-space:nowrap;}
+/* footer */
+.foot{flex-shrink:0;border-top:1px solid var(--line);padding:14px 22px 28px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);}
+.foot-l{display:flex;flex-direction:column;gap:2px;}
+.foot-lbl{font-size:11.5px;font-weight:500;color:var(--txt2);}
+.foot-val{font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1;}
+.foot-unit{font-size:13px;font-weight:600;color:var(--txt2);margin-left:3px;}
+.sem{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--txt2);}
+.dot{border-radius:50%;display:inline-block;flex-shrink:0;transition:background 0.3s;}
+/* sheet backdrop */
+.backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,0.6);display:flex;align-items:flex-end;justify-content:center;}
+.sheet{width:100%;max-width:430px;box-sizing:border-box;background:#101A13;border-radius:22px 22px 0 0;border-top:1px solid rgba(255,255,255,0.08);padding:10px 22px 36px;animation:slideup 0.26s cubic-bezier(0.32,0.72,0,1);}
+@keyframes slideup{from{transform:translateY(12px);opacity:0.7;}}
+.grab{width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,0.18);margin:0 auto 14px;}
+.shead{display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;}
+.stitle{font-size:17px;font-weight:700;letter-spacing:-0.01em;margin:0;}
+.sclose{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.07);border:none;color:var(--txt2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ssub{font-size:12.5px;color:var(--txt2);margin:2px 0 14px;line-height:1.5;}
+.scurrent{color:var(--accent);font-weight:600;}
+/* replace modal */
+.altlist{display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
+.alt{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-radius:13px;padding:11px 13px;cursor:pointer;color:var(--txt);text-align:left;font-family:inherit;transition:border-color 0.15s,background 0.15s;}
+.alt.sel{border-color:var(--accent);background:var(--accent-dim);}
+.alt-radio{width:16px;height:16px;border-radius:50%;box-sizing:border-box;border:1.5px solid rgba(255,255,255,0.28);flex-shrink:0;transition:border 0.15s;}
+.alt.sel .alt-radio{border:5px solid var(--accent);}
+.alt-name{font-size:13.5px;font-weight:600;flex:1;min-width:0;}
+.alt-orig{font-weight:400;color:var(--txt2);font-size:12px;}
+.alt-macros{font-size:11px;color:var(--txt2);white-space:nowrap;flex-shrink:0;}
+.btn{width:100%;box-sizing:border-box;background:var(--accent);color:#07130C;border:none;border-radius:13px;padding:14px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;letter-spacing:0.01em;}
+.btn:disabled{opacity:0.3;cursor:default;}
+/* weight modal */
+.w-row{display:flex;align-items:center;gap:9px;margin:10px 0 16px;}
+.w-inp-wrap{position:relative;flex:1;}
+.w-inp{width:100%;box-sizing:border-box;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.10);border-radius:12px;padding:12px 38px 12px 13px;font-size:16px;font-weight:600;font-family:inherit;color:var(--txt);outline:none;}
+.w-inp:focus{border-color:var(--accent);}
+.w-inp::placeholder{color:rgba(255,255,255,0.22);font-weight:400;}
+.w-inp::-webkit-outer-spin-button,.w-inp::-webkit-inner-spin-button{-webkit-appearance:none;}
+.w-unit{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:12px;color:var(--txt2);font-weight:600;}
+.w-date{font-size:11.5px;color:var(--txt2);white-space:nowrap;}
+.btn-sm{width:auto;padding:10px 16px;font-size:13px;border-radius:11px;}
+.chart-wrap{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:14px;padding:13px 10px 8px;}
+.chart-axis{display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);padding:5px 2px 0;}
+.wstatus{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;margin-top:14px;letter-spacing:-0.01em;}
+/* week screen */
+.wkscreen{flex:1;min-height:0;display:flex;flex-direction:column;}
+.wkhdr{padding:52px 22px 0;display:flex;align-items:center;gap:13px;flex-shrink:0;}
+.wktitle{font-size:21px;font-weight:800;letter-spacing:-0.02em;margin:0;line-height:1.15;}
+.wksub{font-size:12px;color:var(--txt2);font-weight:500;}
+.wkrow{display:flex;gap:9px;overflow-x:auto;padding:20px 22px 24px;align-items:stretch;scroll-snap-type:x mandatory;scrollbar-width:none;flex:1;}
+.wkrow::-webkit-scrollbar{display:none;}
+.wkcard{flex:0 0 136px;scroll-snap-align:start;box-sizing:border-box;background:var(--card);border:1px solid rgba(255,255,255,0.04);border-radius:16px;padding:15px 13px;display:flex;flex-direction:column;gap:5px;}
+.wkcard.today{border-color:rgba(91,228,155,0.35);background:rgba(91,228,155,0.04);}
+.wkcard.offplan{opacity:0.35;}
+.wktop{display:flex;align-items:center;justify-content:space-between;}
+.wkday{font-size:14px;font-weight:700;}
+.wkdate{font-size:11px;color:var(--txt2);}
+.wkpreview{font-size:11.5px;line-height:1.5;color:var(--txt2);margin:6px 0 0;flex:1;}
+.wkstate{font-size:10px;font-weight:700;letter-spacing:0.05em;text-transform:uppercase;color:var(--txt2);}
+.wkcard.today .wkstate{color:var(--accent);}
+.hint{text-align:center;font-size:11px;color:rgba(255,255,255,0.2);padding:0 0 28px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useMemo}=React;
+
+// ── DATE UTILS ──────────────────────────────────────────────────────────────
+const PLAN_START=new Date(2026,5,10);
+const PLAN_END  =new Date(2026,7,31);
+const TOTAL_DAYS=83;
+
+function todayDate(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+function dayOffset(d){return Math.round((d-PLAN_START)/86400000);}
+function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
+function getPhase(off){return(off>=27&&off<=61)?2:1;}
+function weekNum(off){return Math.floor(off/7)+1;}
+
+const DAYS_ES=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+const DAYS_S =['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MONS   =['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function fmtFull(d){return`${DAYS_ES[d.getDay()]} ${d.getDate()} ${MONS[d.getMonth()]}`;}
+function fmtShort(d){return{day:DAYS_S[d.getDay()],date:`${d.getDate()} ${MONS[d.getMonth()]}`};}
+
+// ── MEAL DATA ────────────────────────────────────────────────────────────────
+// Shared alternative pools
+const ALT_LUNCH_PROT=[
+  {name:"Muslo de pollo 200g",kcal:300,prot:44},
+  {name:"Tilapia 220g",kcal:230,prot:46},
+  {name:"Res magra 180g",kcal:300,prot:45},
+  {name:"Atún en lata 200g",kcal:210,prot:44}
+];
+const ALT_LUNCH_CARB=[
+  {name:"Arroz integral 1 taza",kcal:215,prot:5},
+  {name:"Papa mediana",kcal:150,prot:3},
+  {name:"Pasta integral 1 taza",kcal:200,prot:7}
+];
+const ALT_LEG=[
+  {name:"Lentejas ½ taza",kcal:115,prot:9},
+  {name:"Garbanzos ½ taza",kcal:135,prot:7},
+  {name:"Arveja cocida ½ taza",kcal:70,prot:5}
+];
+const ALT_VEG=[
+  {name:"Espinaca salteada",kcal:45,prot:5},
+  {name:"Zanahoria salteada",kcal:50,prot:1},
+  {name:"Coliflor asada",kcal:55,prot:4}
+];
+const ALT_DIN_PROT=[
+  {name:"Pechuga de pollo 180g",kcal:295,prot:55},
+  {name:"Tilapia 180g",kcal:190,prot:38},
+  {name:"Atún en lata 170g",kcal:180,prot:38}
+];
+const ALT_DIN_CARB=[
+  {name:"Batata mediana",kcal:130,prot:2},
+  {name:"Arroz integral ½ taza",kcal:108,prot:2},
+  {name:"Plátano verde cocido",kcal:130,prot:1}
+];
+const ALT_FRUIT=[
+  {name:"Manzana",kcal:70,prot:0},
+  {name:"Pera",kcal:75,prot:0},
+  {name:"Naranja",kcal:60,prot:1}
+];
+const ALT_CAFE=[
+  {name:"Té verde",kcal:3,prot:0},
+  {name:"Café con leche descremada",kcal:60,prot:4},
+  {name:"Aromática sin azúcar",kcal:3,prot:0}
+];
+const ALT_WHEY=[
+  {name:"5 claras de huevo",kcal:85,prot:18},
+  {name:"Atún en lata 100g",kcal:110,prot:23},
+  {name:"Yogur griego 150g",kcal:110,prot:13}
+];
+
+function i(name,kcal,prot,alts){return{name,kcal,prot,alts};}
+function m(id,name,kcal,items){return{id,name,kcal,items};}
+
+// Phase-2 bonus item (+100 kcal to almuerzo)
+const FASE2_BONUS=i("Arroz extra ½ taza",100,2,[
+  {name:"Papa extra pequeña",kcal:75,prot:1},
+  {name:"Batata extra ½ ud",kcal:65,prot:1},
+  {name:"Plátano ½ ud asado",kcal:60,prot:0}
+]);
+
+// 14-day rotation. Each = array of 5 meals [des,sam,alm,spm,cen]
+const TEMPLATES=[
+// ── T0 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",565,[
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Pavo 100g + 2 huevos",kcal:275,prot:32},{name:"Tofu revuelto 200g",kcal:200,prot:18}]),
+  i("Pan integral (2 tajadas)",160,8,[{name:"Arepa integral",kcal:155,prot:4},{name:"Avena 40g",kcal:150,prot:5},{name:"Arepa de chócolo",kcal:170,prot:4}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE),
+  i("Miel 1 cdta",20,0,[{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Stevia",kcal:0,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("sam","Snack AM",290,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Skyr 150g",kcal:130,prot:20},{name:"Kéfir 250ml",kcal:145,prot:14}]),
+  i("Avena 30g",112,4,[{name:"Granola sin azúcar 30g",kcal:120,prot:3},{name:"Maní 20g",kcal:120,prot:5},{name:"Almendras 15g",kcal:90,prot:3}]),
+  i("Miel 1 cdta",25,0,[{name:"Stevia",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Mermelada sin azúcar",kcal:15,prot:0}])
+]),
+m("alm","Almuerzo",870,[
+  i("Pechuga de pollo 200g",330,62,ALT_LUNCH_PROT),
+  i("Arroz blanco 1 taza",200,4,ALT_LUNCH_CARB),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Maní 20g",kcal:120,prot:5},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada verde",30,2,ALT_VEG),
+  i("Jugo de naranja natural",115,2,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de maracuyá s/azúcar",kcal:35,prot:1},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Manzana",70,0,ALT_FRUIT),
+  i("Almendras 15g",80,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Nueces 3 uds",kcal:80,prot:2},{name:"Marañones 15g",kcal:90,prot:2}])
+]),
+m("cen","Cena",735,[
+  i("Tilapia 180g",190,38,ALT_DIN_PROT),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Brócoli al vapor",55,5,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní 1 cda",kcal:95,prot:4}]),
+  i("Ensalada verde",30,2,[{name:"Pepino + tomate",kcal:30,prot:1},{name:"Zanahoria rallada",kcal:35,prot:1},{name:"Rúcula con limón",kcal:20,prot:2}])
+])],
+// ── T1 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",570,[
+  i("Avena 80g con leche descremada",310,12,[{name:"Avena 80g con agua + miel",kcal:305,prot:10},{name:"Quinoa cocida 200g",kcal:220,prot:8},{name:"Granola sin azúcar 60g",kcal:240,prot:6}]),
+  i("3 huevos revueltos",210,21,[{name:"2 huevos + 3 claras",kcal:185,prot:22},{name:"Pechuga de pavo 80g",kcal:110,prot:23},{name:"Cuajada 100g",kcal:110,prot:11}]),
+  i("Manzana",70,0,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",285,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 150g",kcal:110,prot:13},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("15 almendras",105,4,[{name:"20 maníes",kcal:115,prot:5},{name:"10 nueces de marañón",kcal:100,prot:3},{name:"Semillas de calabaza 20g",kcal:110,prot:5}]),
+  i("Fresas 100g",35,1,[{name:"Kiwi 1 ud",kcal:42,prot:1},{name:"Naranja ½",kcal:30,prot:1},{name:"Mandarina 1 ud",kcal:35,prot:1}])
+]),
+m("alm","Almuerzo",865,[
+  i("Res magra 180g",300,45,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Cerdo lomo 180g",kcal:270,prot:38},{name:"Atún 200g",kcal:210,prot:44}]),
+  i("Papa mediana cocida",150,3,[{name:"Arroz blanco ¾ taza",kcal:150,prot:3},{name:"Batata mediana",kcal:130,prot:2},{name:"Pasta integral ¾ taza",kcal:150,prot:5}]),
+  i("Lentejas ½ taza",115,9,ALT_LEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Crema de aguacate 2 cdas",kcal:80,prot:1},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Ensalada de tomate",30,1,[{name:"Pepino + cebolla",kcal:25,prot:1},{name:"Ensalada verde",kcal:30,prot:2},{name:"Pimentón asado",kcal:35,prot:1}]),
+  i("Jugo de maracuyá natural",115,1,[{name:"Agua con limón",kcal:5,prot:0},{name:"Agua",kcal:0,prot:0},{name:"Té frío sin azúcar",kcal:5,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Maní 30g",175,8,[{name:"Almendras 25g",kcal:145,prot:5},{name:"Nueces mixtas 25g",kcal:155,prot:4},{name:"Marañones 25g",kcal:145,prot:4}]),
+  i("Banano",100,1,ALT_FRUIT.concat([{name:"Banano",kcal:100,prot:1}]).slice(0,3)),
+  i("Agua",0,0,[{name:"Té verde sin azúcar",kcal:0,prot:0},{name:"Agua con limón",kcal:5,prot:0},{name:"Agua mineral",kcal:0,prot:0}])
+]),
+m("cen","Cena",740,[
+  i("Pechuga de pollo 180g",295,55,ALT_DIN_PROT),
+  i("Batata mediana",130,2,ALT_DIN_CARB),
+  i("Espinaca salteada con ajo",50,5,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 20g",kcal:65,prot:5},{name:"Mantequilla de maní",kcal:95,prot:4}]),
+  i("Zanahoria salteada",50,1,[{name:"Brócoli al vapor",kcal:55,prot:5},{name:"Judías verdes",kcal:45,prot:3},{name:"Pimentón salteado",kcal:40,prot:1}])
+])],
+// ── T2 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",560,[
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Huevos pochados 4 uds",kcal:280,prot:28},{name:"Omelette 4 huevos",kcal:280,prot:28}]),
+  i("Arepa integral",155,4,[{name:"Pan integral 2 tajadas",kcal:160,prot:8},{name:"Arepa de maíz pequeña",kcal:80,prot:2},{name:"Avena 40g",kcal:150,prot:5}]),
+  i("Aguacate ¼",80,1,[{name:"Tomate + pepino",kcal:35,prot:1},{name:"Hogao casero",kcal:50,prot:1},{name:"Queso costeño 20g",kcal:65,prot:5}]),
+  i("Naranja",60,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",295,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Skyr 150g",kcal:130,prot:20},{name:"Kéfir 250ml",kcal:145,prot:14}]),
+  i("Fresas 150g",50,1,[{name:"Arándanos 100g",kcal:57,prot:1},{name:"Kiwi 2 uds",kcal:84,prot:2},{name:"Frambuesas 100g",kcal:52,prot:1}]),
+  i("Miel 1 cda",60,0,[{name:"Panela 1 cdta",kcal:20,prot:0},{name:"Stevia",kcal:0,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("alm","Almuerzo",870,[
+  i("Muslo de pollo 200g",300,44,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Res magra 180g",kcal:300,prot:45},{name:"Cerdo lomo 200g",kcal:300,prot:42}]),
+  i("Arroz blanco 1 taza",200,4,ALT_LUNCH_CARB),
+  i("Plátano asado ½ ud",120,1,[{name:"Yuca cocida 100g",kcal:130,prot:1},{name:"Papa criolla 150g",kcal:120,prot:2},{name:"Batata ½ ud",kcal:65,prot:1}]),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Ensalada verde",30,2,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ¼",kcal:80,prot:1},{name:"Queso costeño 30g",kcal:95,prot:7},{name:"Crema de aguacate",kcal:80,prot:1}])
+]),
+m("spm","Snack PM",315,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Pera",75,0,ALT_FRUIT),
+  i("Maní 15g",90,4,[{name:"Almendras 15g",kcal:90,prot:3},{name:"Semillas de girasol 15g",kcal:85,prot:3},{name:"Marañones 15g",kcal:90,prot:2}])
+]),
+m("cen","Cena",740,[
+  i("Salmón al horno 150g",290,38,[{name:"Trucha 170g",kcal:255,prot:36},{name:"Pechuga 180g",kcal:295,prot:55},{name:"Tilapia 200g",kcal:210,prot:42}]),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Zanahoria salteada",50,1,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Mantequilla de maní",kcal:95,prot:4},{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada de pepino",35,1,[{name:"Tomate + lechuga",kcal:25,prot:1},{name:"Rúcula",kcal:20,prot:2},{name:"Ensalada verde",kcal:30,prot:2}])
+])],
+// ── T3 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",565,[
+  i("3 huevos + 2 claras",250,26,[{name:"4 huevos revueltos",kcal:280,prot:28},{name:"Pavo 100g + 2 claras",kcal:160,prot:28},{name:"Omelette 4 huevos",kcal:280,prot:28}]),
+  i("Avena 60g con agua",225,7,[{name:"Pan integral 2 tajadas",kcal:160,prot:8},{name:"Arepa integral",kcal:155,prot:4},{name:"Avena 60g con leche",kcal:285,prot:11}]),
+  i("Banano grande",110,1,ALT_FRUIT),
+  i("Miel 1 cdta",20,0,[{name:"Stevia",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Sin endulzante",kcal:0,prot:0}]),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",285,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 200g",kcal:150,prot:18},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Maní 20g",120,5,[{name:"Almendras 20g",kcal:120,prot:4},{name:"Semillas de calabaza 20g",kcal:110,prot:5},{name:"Nueces 3 uds",kcal:105,prot:2}]),
+  i("Té verde",0,0,[{name:"Café negro",kcal:5,prot:0},{name:"Agua",kcal:0,prot:0},{name:"Aromática",kcal:3,prot:0}])
+]),
+m("alm","Almuerzo",875,[
+  i("Tilapia 220g",230,46,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Atún en lata 200g",kcal:210,prot:44},{name:"Salmón 170g",kcal:330,prot:43}]),
+  i("Pasta integral 1 taza",200,7,[{name:"Arroz blanco 1 taza",kcal:200,prot:4},{name:"Papa mediana",kcal:150,prot:3},{name:"Batata mediana",kcal:130,prot:2}]),
+  i("Lentejas ½ taza",115,9,ALT_LEG),
+  i("Brócoli al vapor",55,5,ALT_VEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Crema de aguacate",kcal:80,prot:1}]),
+  i("Jugo de lulo natural",115,1,[{name:"Jugo de guanábana",kcal:100,prot:1},{name:"Agua con limón",kcal:5,prot:0},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",305,[
+  i("Whey proteína 30g",120,24,ALT_WHEY),
+  i("Manzana grande",95,0,ALT_FRUIT),
+  i("Almendras 15g",90,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Marañones 15g",kcal:90,prot:2},{name:"Nueces 3 uds",kcal:105,prot:2}])
+]),
+m("cen","Cena",740,[
+  i("Pechuga de pollo 180g",295,55,ALT_DIN_PROT),
+  i("Arroz integral ½ taza",108,2,ALT_DIN_CARB),
+  i("Espinaca salteada",45,5,ALT_VEG),
+  i("Papa criolla 100g",80,2,[{name:"Papa cocida 80g",kcal:120,prot:2},{name:"Yuca 80g",kcal:105,prot:1},{name:"Batata ½ ud",kcal:65,prot:1}]),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Mantequilla de maní",kcal:95,prot:4},{name:"Aguacate ¼",kcal:80,prot:1},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada verde",30,2,[{name:"Zanahoria rallada",kcal:35,prot:1},{name:"Pepino",kcal:15,prot:0},{name:"Tomate",kcal:18,prot:1}])
+])],
+// ── T4 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",560,[
+  i("4 huevos revueltos",280,28,[{name:"Huevos pochados 4 uds",kcal:280,prot:28},{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Pavo 100g + 2 huevos",kcal:275,prot:32}]),
+  i("Pan integral (2 tajadas)",160,8,[{name:"Arepa integral",kcal:155,prot:4},{name:"Tostadas integrales 3 uds",kcal:150,prot:5},{name:"Arepa de chócolo",kcal:170,prot:4}]),
+  i("Naranja grande",70,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",290,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Skyr 150g",kcal:130,prot:20},{name:"Kéfir 250ml",kcal:145,prot:14}]),
+  i("Avena 30g",112,4,[{name:"Granola sin azúcar 30g",kcal:120,prot:3},{name:"Maní 20g",kcal:120,prot:5},{name:"Almendras 15g",kcal:90,prot:3}]),
+  i("Miel 1 cdta",25,0,[{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Stevia",kcal:0,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("alm","Almuerzo",870,[
+  i("Atún en lata 200g",210,44,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Tilapia 220g",kcal:230,prot:46},{name:"Salmón 170g",kcal:330,prot:43}]),
+  i("Arroz integral 1 taza",215,5,ALT_LUNCH_CARB),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Ensalada de tomate + pepino",35,1,ALT_VEG),
+  i("Jugo de tomate de árbol",100,2,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de naranja natural",kcal:115,prot:2},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Almendras 10 uds",70,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Nueces 3 uds",kcal:80,prot:2},{name:"Marañones 10 uds",kcal:80,prot:2}])
+]),
+m("cen","Cena",740,[
+  i("Tilapia 180g",190,38,ALT_DIN_PROT),
+  i("Batata mediana",130,2,ALT_DIN_CARB),
+  i("Brócoli al vapor",55,5,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní 1 cda",kcal:95,prot:4}]),
+  i("Ensalada verde",50,2,[{name:"Rúcula + tomate",kcal:45,prot:2},{name:"Zanahoria rallada",kcal:35,prot:1},{name:"Pepino + cebolla",kcal:30,prot:1}])
+])],
+// ── T5 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",570,[
+  i("Avena 80g con leche descremada",310,12,[{name:"Avena 80g con agua",kcal:300,prot:10},{name:"Granola sin azúcar 70g",kcal:280,prot:7},{name:"Avena 60g con leche entera",kcal:285,prot:10}]),
+  i("4 claras de huevo",70,15,[{name:"3 huevos revueltos",kcal:210,prot:21},{name:"Pavo 80g",kcal:110,prot:23},{name:"Cuajada 100g",kcal:110,prot:11}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Miel 1 cdta",20,0,[{name:"Stevia",kcal:0,prot:0},{name:"Sin endulzante",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0}]),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",285,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 200g",kcal:150,prot:18},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("15 almendras",105,4,[{name:"20 maníes",kcal:115,prot:5},{name:"Semillas de girasol 20g",kcal:115,prot:4},{name:"Marañones 15g",kcal:90,prot:2}]),
+  i("Mandarina 1 ud",35,1,[{name:"Fresas 100g",kcal:35,prot:1},{name:"Kiwi 1 ud",kcal:42,prot:1},{name:"Naranja ½",kcal:30,prot:1}])
+]),
+m("alm","Almuerzo",875,[
+  i("Cerdo lomo 180g",270,38,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Res magra 180g",kcal:300,prot:45},{name:"Muslo de pollo 200g",kcal:300,prot:44}]),
+  i("Papa mediana cocida",150,3,ALT_LUNCH_CARB),
+  i("Lentejas ½ taza",115,9,ALT_LEG),
+  i("Arroz blanco ½ taza",100,2,[{name:"Yuca cocida 80g",kcal:105,prot:1},{name:"Plátano verde ½",kcal:65,prot:1},{name:"Batata ½",kcal:65,prot:1}]),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Crema de aguacate",kcal:80,prot:1}]),
+  i("Ensalada verde",35,2,ALT_VEG),
+  i("Jugo de guayaba natural",100,1,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de naranja",kcal:115,prot:2},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",305,[
+  i("Maní 25g",145,6,[{name:"Almendras 20g",kcal:120,prot:4},{name:"Nueces mixtas 20g",kcal:125,prot:3},{name:"Marañones 20g",kcal:115,prot:3}]),
+  i("Manzana",70,0,ALT_FRUIT),
+  i("Agua",0,0,[{name:"Té verde sin azúcar",kcal:0,prot:0},{name:"Agua con limón",kcal:5,prot:0},{name:"Agua mineral",kcal:0,prot:0}])
+]),
+m("cen","Cena",735,[
+  i("Res magra 160g",265,40,ALT_DIN_PROT),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Zanahoria + brócoli al vapor",60,4,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Mantequilla de maní",kcal:95,prot:4},{name:"Aguacate ¼",kcal:80,prot:1},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada verde",35,2,[{name:"Pepino + tomate",kcal:30,prot:1},{name:"Lechuga + cebolla",kcal:25,prot:1},{name:"Rúcula",kcal:20,prot:2}])
+])],
+// ── T6 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",555,[
+  i("3 huevos + 2 claras revueltos",250,26,[{name:"4 huevos revueltos",kcal:280,prot:28},{name:"Omelette 4 huevos",kcal:280,prot:28},{name:"Pavo 100g + 2 huevos",kcal:275,prot:32}]),
+  i("Arepa integral",155,4,[{name:"Pan integral 2 tajadas",kcal:160,prot:8},{name:"Avena 40g",kcal:150,prot:5},{name:"Arepa de chócolo",kcal:170,prot:4}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Queso costeño 25g",80,6,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Tomate + hogao",kcal:50,prot:1},{name:"Cuajada 50g",kcal:55,prot:5}]),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",295,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Kéfir 250ml",kcal:145,prot:14},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Maní 20g",120,5,[{name:"Almendras 20g",kcal:120,prot:4},{name:"Nueces 4 uds",kcal:105,prot:2},{name:"Semillas de girasol 20g",kcal:115,prot:4}]),
+  i("Manzana ½",35,0,[{name:"Fresas 80g",kcal:28,prot:1},{name:"Mandarina 1 ud",kcal:35,prot:1},{name:"Kiwi ½",kcal:21,prot:0}])
+]),
+m("alm","Almuerzo",880,[
+  i("Pechuga de pollo 200g",330,62,ALT_LUNCH_PROT),
+  i("Arroz blanco 1 taza",200,4,ALT_LUNCH_CARB),
+  i("Garbanzos ½ taza",135,7,ALT_LEG),
+  i("Plátano maduro asado ½",60,0,[{name:"Papa criolla 100g",kcal:80,prot:2},{name:"Yuca cocida 80g",kcal:105,prot:1},{name:"Sin carbohidrato extra",kcal:0,prot:0}]),
+  i("Ensalada verde",30,2,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ¼",kcal:80,prot:1},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní",kcal:95,prot:4}])
+]),
+m("spm","Snack PM",310,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Naranja grande",70,1,ALT_FRUIT),
+  i("Almendras 15g",80,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Nueces 3 uds",kcal:80,prot:2},{name:"Marañones 15g",kcal:90,prot:2}])
+]),
+m("cen","Cena",740,[
+  i("Atún en lata 170g",180,38,ALT_DIN_PROT),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Brócoli + zanahoria al vapor",80,5,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Crema de aguacate 2 cdas",kcal:80,prot:1}]),
+  i("Ensalada verde",35,2,[{name:"Rúcula + tomate",kcal:45,prot:2},{name:"Pepino + cebolla",kcal:25,prot:1},{name:"Zanahoria rallada",kcal:35,prot:1}])
+])],
+// ── T7 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",565,[
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Huevos pochados 4 uds",kcal:280,prot:28},{name:"Pavo 100g + 2 huevos",kcal:275,prot:32}]),
+  i("Pan integral (2 tajadas)",160,8,[{name:"Arepa integral",kcal:155,prot:4},{name:"Tostadas integrales 3 uds",kcal:150,prot:5},{name:"Avena 40g",kcal:150,prot:5}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE),
+  i("Miel 1 cdta",20,0,[{name:"Stevia",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("sam","Snack AM",285,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 150g",kcal:110,prot:13},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Avena 20g",75,3,[{name:"Granola 20g",kcal:80,prot:2},{name:"Maní 10g",kcal:60,prot:3},{name:"Almendras 10g",kcal:60,prot:2}]),
+  i("Miel 1 cda",60,0,[{name:"Mermelada sin azúcar",kcal:15,prot:0},{name:"Stevia",kcal:0,prot:0},{name:"Panela 1 cdta",kcal:20,prot:0}])
+]),
+m("alm","Almuerzo",875,[
+  i("Res magra 180g",300,45,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Cerdo lomo 180g",kcal:270,prot:38},{name:"Muslo de pollo 200g",kcal:300,prot:44}]),
+  i("Papa mediana cocida",150,3,ALT_LUNCH_CARB),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Arroz blanco ½ taza",100,2,[{name:"Yuca cocida 80g",kcal:105,prot:1},{name:"Plátano verde ½",kcal:65,prot:1},{name:"Sin carbohidrato extra",kcal:0,prot:0}]),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Ensalada verde",35,2,ALT_VEG),
+  i("Jugo de mora natural",100,1,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de naranja",kcal:115,prot:2},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Maní 30g",175,8,[{name:"Almendras 25g",kcal:145,prot:5},{name:"Nueces mixtas 25g",kcal:155,prot:4},{name:"Marañones 25g",kcal:145,prot:4}]),
+  i("Manzana",70,0,ALT_FRUIT),
+  i("Agua",0,0,[{name:"Té verde sin azúcar",kcal:0,prot:0},{name:"Agua con limón",kcal:5,prot:0},{name:"Agua mineral",kcal:0,prot:0}])
+]),
+m("cen","Cena",740,[
+  i("Atún en lata 170g",180,38,ALT_DIN_PROT),
+  i("Batata mediana",130,2,ALT_DIN_CARB),
+  i("Espinaca salteada con ajo",50,5,ALT_VEG),
+  i("Papa criolla 100g",80,2,[{name:"Papa cocida pequeña",kcal:100,prot:2},{name:"Yuca 60g",kcal:80,prot:1},{name:"Sin extra",kcal:0,prot:0}]),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Mantequilla de maní",kcal:95,prot:4},{name:"Aguacate ¼",kcal:80,prot:1},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada de tomate",30,1,[{name:"Pepino + lechuga",kcal:20,prot:1},{name:"Rúcula con limón",kcal:20,prot:2},{name:"Zanahoria rallada",kcal:35,prot:1}])
+])],
+// ── T8 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",570,[
+  i("Avena 80g con leche descremada",310,12,[{name:"Avena 80g con agua + miel",kcal:305,prot:10},{name:"Quinoa cocida 200g",kcal:220,prot:8},{name:"Granola sin azúcar 60g",kcal:240,prot:6}]),
+  i("3 huevos + 1 clara",225,23,[{name:"4 huevos revueltos",kcal:280,prot:28},{name:"2 huevos + 3 claras",kcal:185,prot:22},{name:"Pechuga de pavo 100g",kcal:135,prot:28}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",290,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Skyr 150g",kcal:130,prot:20},{name:"Kéfir 250ml",kcal:145,prot:14}]),
+  i("Maní 20g",120,5,[{name:"Almendras 20g",kcal:120,prot:4},{name:"Nueces 3 uds",kcal:105,prot:2},{name:"Marañones 20g",kcal:115,prot:3}]),
+  i("Miel 1 cdta",25,0,[{name:"Stevia",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("alm","Almuerzo",870,[
+  i("Muslo de pollo 200g",300,44,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Tilapia 220g",kcal:230,prot:46},{name:"Res magra 180g",kcal:300,prot:45}]),
+  i("Arroz integral 1 taza",215,5,ALT_LUNCH_CARB),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Ensalada verde",30,2,ALT_VEG),
+  i("Jugo de naranja natural",100,2,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de maracuyá",kcal:35,prot:1},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Pera",75,0,ALT_FRUIT),
+  i("Almendras 15g",80,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Semillas de girasol 15g",kcal:85,prot:3},{name:"Nueces 3 uds",kcal:80,prot:2}])
+]),
+m("cen","Cena",740,[
+  i("Pechuga de pollo 180g",295,55,ALT_DIN_PROT),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Brócoli + espinaca al vapor",65,6,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní",kcal:95,prot:4}]),
+  i("Ensalada verde",35,2,[{name:"Tomate + pepino",kcal:30,prot:1},{name:"Rúcula",kcal:20,prot:2},{name:"Zanahoria rallada",kcal:35,prot:1}])
+])],
+// ── T9 ─────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",560,[
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Pavo 100g + 2 huevos",kcal:275,prot:32},{name:"Tofu revuelto 200g",kcal:200,prot:18}]),
+  i("Arepa de chócolo",170,4,[{name:"Pan integral 2 tajadas",kcal:160,prot:8},{name:"Arepa integral",kcal:155,prot:4},{name:"Avena 40g",kcal:150,prot:5}]),
+  i("Naranja grande",70,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",290,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 200g",kcal:150,prot:18},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Almendras 15g",105,4,[{name:"Maní 20g",kcal:120,prot:5},{name:"Marañones 15g",kcal:90,prot:2},{name:"Nueces 3 uds",kcal:105,prot:2}]),
+  i("Manzana ½",35,0,[{name:"Kiwi 1 ud",kcal:42,prot:1},{name:"Mandarina 1 ud",kcal:35,prot:1},{name:"Fresas 80g",kcal:28,prot:1}])
+]),
+m("alm","Almuerzo",870,[
+  i("Tilapia 220g",230,46,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Atún en lata 200g",kcal:210,prot:44},{name:"Salmón 170g",kcal:330,prot:43}]),
+  i("Arroz blanco 1 taza",200,4,ALT_LUNCH_CARB),
+  i("Lentejas ½ taza",115,9,ALT_LEG),
+  i("Plátano asado ½ ud",120,1,[{name:"Papa criolla 150g",kcal:120,prot:2},{name:"Yuca cocida 100g",kcal:130,prot:1},{name:"Batata ½",kcal:65,prot:1}]),
+  i("Ensalada verde",30,2,ALT_VEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Crema de aguacate",kcal:80,prot:1}])
+]),
+m("spm","Snack PM",310,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Almendras 10 uds",70,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Nueces 3 uds",kcal:80,prot:2},{name:"Semillas de girasol 15g",kcal:85,prot:3}])
+]),
+m("cen","Cena",740,[
+  i("Tilapia 180g",190,38,ALT_DIN_PROT),
+  i("Batata mediana",130,2,ALT_DIN_CARB),
+  i("Zanahoria + espinaca",55,4,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Mantequilla de maní",kcal:95,prot:4},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada verde",50,2,[{name:"Pepino + tomate",kcal:30,prot:1},{name:"Rúcula con limón",kcal:20,prot:2},{name:"Repollo rallado",kcal:25,prot:1}])
+])],
+// ── T10 ────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",575,[
+  i("Avena 80g con leche descremada",310,12,[{name:"Avena 80g con agua",kcal:300,prot:10},{name:"Quinoa cocida 200g",kcal:220,prot:8},{name:"Granola sin azúcar 60g",kcal:240,prot:6}]),
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Pechuga de pavo 100g",kcal:135,prot:28},{name:"Cuajada 100g",kcal:110,prot:11}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Café negro",5,0,ALT_CAFE),
+  i("Miel 1 cdta",20,0,[{name:"Stevia",kcal:0,prot:0},{name:"Sin endulzante",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0}])
+]),
+m("sam","Snack AM",290,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Skyr 150g",kcal:130,prot:20},{name:"Kéfir 250ml",kcal:145,prot:14}]),
+  i("Avena 30g",112,4,[{name:"Granola sin azúcar 30g",kcal:120,prot:3},{name:"Almendras 15g",kcal:90,prot:3},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Miel 1 cdta",25,0,[{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Stevia",kcal:0,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("alm","Almuerzo",870,[
+  i("Atún en lata 200g",210,44,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Tilapia 220g",kcal:230,prot:46},{name:"Res magra 180g",kcal:300,prot:45}]),
+  i("Papa mediana cocida",150,3,ALT_LUNCH_CARB),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Arroz blanco ½ taza",100,2,[{name:"Yuca cocida 80g",kcal:105,prot:1},{name:"Plátano ½ ud",kcal:60,prot:0},{name:"Sin extra",kcal:0,prot:0}]),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Ensalada de tomate",30,1,ALT_VEG),
+  i("Jugo de mango natural",115,1,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de naranja",kcal:115,prot:2},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Maní 30g",175,8,[{name:"Almendras 25g",kcal:145,prot:5},{name:"Nueces mixtas 25g",kcal:155,prot:4},{name:"Marañones 25g",kcal:145,prot:4}]),
+  i("Manzana",70,0,ALT_FRUIT),
+  i("Agua",0,0,[{name:"Té verde sin azúcar",kcal:0,prot:0},{name:"Agua mineral",kcal:0,prot:0},{name:"Agua con limón",kcal:5,prot:0}])
+]),
+m("cen","Cena",735,[
+  i("Salmón al horno 150g",290,38,[{name:"Trucha 170g",kcal:255,prot:36},{name:"Tilapia 200g",kcal:210,prot:42},{name:"Pechuga 180g",kcal:295,prot:55}]),
+  i("Batata mediana",130,2,ALT_DIN_CARB),
+  i("Brócoli al vapor",55,5,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní",kcal:95,prot:4}]),
+  i("Ensalada verde",35,2,[{name:"Pepino + tomate",kcal:30,prot:1},{name:"Zanahoria rallada",kcal:35,prot:1},{name:"Rúcula con limón",kcal:20,prot:2}])
+])],
+// ── T11 ────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",560,[
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Huevos pochados 4 uds",kcal:280,prot:28},{name:"Omelette 4 huevos",kcal:280,prot:28}]),
+  i("Pan integral (2 tajadas)",160,8,[{name:"Arepa integral",kcal:155,prot:4},{name:"Tostadas integrales 3 uds",kcal:150,prot:5},{name:"Arepa de chócolo",kcal:170,prot:4}]),
+  i("Aguacate ¼",80,1,[{name:"Queso costeño 20g",kcal:65,prot:5},{name:"Tomate + hogao",kcal:50,prot:1},{name:"Sin extra",kcal:0,prot:0}]),
+  i("Café negro",5,0,ALT_CAFE),
+  i("Naranja",60,1,ALT_FRUIT)
+]),
+m("sam","Snack AM",285,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 200g",kcal:150,prot:18},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Maní 15g",90,4,[{name:"Almendras 15g",kcal:90,prot:3},{name:"Semillas de calabaza 15g",kcal:85,prot:4},{name:"Marañones 15g",kcal:90,prot:2}]),
+  i("Fresas 100g",35,1,[{name:"Kiwi 1 ud",kcal:42,prot:1},{name:"Mandarina 1 ud",kcal:35,prot:1},{name:"Naranja ½",kcal:30,prot:1}])
+]),
+m("alm","Almuerzo",875,[
+  i("Cerdo lomo 180g",270,38,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Res magra 180g",kcal:300,prot:45},{name:"Muslo de pollo 200g",kcal:300,prot:44}]),
+  i("Arroz blanco 1 taza",200,4,ALT_LUNCH_CARB),
+  i("Lentejas ½ taza",115,9,ALT_LEG),
+  i("Batata ½ ud",65,1,[{name:"Papa criolla 100g",kcal:80,prot:2},{name:"Yuca cocida 80g",kcal:105,prot:1},{name:"Plátano verde ½",kcal:65,prot:1}]),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Crema de aguacate",kcal:80,prot:1}]),
+  i("Ensalada verde",30,2,ALT_VEG),
+  i("Jugo de piña natural",100,1,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de naranja",kcal:115,prot:2},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",305,[
+  i("Whey proteína 30g",120,24,ALT_WHEY),
+  i("Manzana grande",95,0,ALT_FRUIT),
+  i("Almendras 15g",90,3,[{name:"Maní 15g",kcal:90,prot:4},{name:"Marañones 15g",kcal:90,prot:2},{name:"Nueces 3 uds",kcal:105,prot:2}])
+]),
+m("cen","Cena",740,[
+  i("Res magra 160g",265,40,ALT_DIN_PROT),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Zanahoria salteada",50,1,ALT_VEG),
+  i("Arroz integral ¼ taza",55,1,[{name:"Sin extra",kcal:0,prot:0},{name:"Papa criolla 80g",kcal:65,prot:1},{name:"Yuca 60g",kcal:80,prot:1}]),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Mantequilla de maní",kcal:95,prot:4},{name:"Aguacate ¼",kcal:80,prot:1},{name:"Queso costeño 25g",kcal:80,prot:6}]),
+  i("Ensalada verde",35,2,[{name:"Pepino + tomate",kcal:30,prot:1},{name:"Lechuga + cebolla",kcal:25,prot:1},{name:"Rúcula",kcal:20,prot:2}])
+])],
+// ── T12 ────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",565,[
+  i("3 huevos + 2 claras",250,26,[{name:"4 huevos revueltos",kcal:280,prot:28},{name:"Omelette 4 huevos",kcal:280,prot:28},{name:"Pavo 100g + 2 claras",kcal:160,prot:28}]),
+  i("Arepa integral",155,4,[{name:"Pan integral 2 tajadas",kcal:160,prot:8},{name:"Avena 40g",kcal:150,prot:5},{name:"Arepa de chócolo",kcal:170,prot:4}]),
+  i("Banano grande",110,1,ALT_FRUIT),
+  i("Miel 1 cdta",20,0,[{name:"Stevia",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Sin endulzante",kcal:0,prot:0}]),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",290,[
+  i("Yogur griego 200g",150,18,[{name:"Cuajada 180g",kcal:160,prot:18},{name:"Kéfir 250ml",kcal:145,prot:14},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Granola sin azúcar 30g",120,3,[{name:"Avena 30g",kcal:112,prot:4},{name:"Maní 20g",kcal:120,prot:5},{name:"Almendras 15g",kcal:90,prot:3}]),
+  i("Miel 1 cdta",25,0,[{name:"Stevia",kcal:0,prot:0},{name:"Panela ½ cdta",kcal:20,prot:0},{name:"Sin endulzante",kcal:0,prot:0}])
+]),
+m("alm","Almuerzo",870,[
+  i("Pechuga de pollo 200g",330,62,ALT_LUNCH_PROT),
+  i("Pasta integral 1 taza",200,7,[{name:"Arroz blanco 1 taza",kcal:200,prot:4},{name:"Papa mediana",kcal:150,prot:3},{name:"Arroz integral 1 taza",kcal:215,prot:5}]),
+  i("Garbanzos ½ taza",135,7,ALT_LEG),
+  i("Brócoli al vapor",55,5,ALT_VEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní 1 cda",kcal:95,prot:4}]),
+  i("Jugo de papaya natural",85,1,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de naranja",kcal:115,prot:2},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Whey proteína 40g",160,32,ALT_WHEY),
+  i("Naranja grande",70,1,ALT_FRUIT),
+  i("Maní 15g",90,4,[{name:"Almendras 15g",kcal:90,prot:3},{name:"Nueces 3 uds",kcal:80,prot:2},{name:"Marañones 15g",kcal:90,prot:2}])
+]),
+m("cen","Cena",735,[
+  i("Tilapia 180g",190,38,ALT_DIN_PROT),
+  i("Arroz integral ½ taza",108,2,ALT_DIN_CARB),
+  i("Papa criolla 100g",80,2,[{name:"Papa cocida pequeña",kcal:100,prot:2},{name:"Yuca 80g",kcal:105,prot:1},{name:"Batata ½",kcal:65,prot:1}]),
+  i("Espinaca salteada",45,5,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní",kcal:95,prot:4}]),
+  i("Ensalada de tomate",30,1,[{name:"Pepino + cebolla",kcal:25,prot:1},{name:"Rúcula",kcal:20,prot:2},{name:"Zanahoria rallada",kcal:35,prot:1}])
+])],
+// ── T13 ────────────────────────────────────────────────────────────────────
+[m("des","Desayuno",570,[
+  i("Avena 80g con leche descremada",310,12,[{name:"Avena 80g con agua + miel",kcal:305,prot:10},{name:"Granola sin azúcar 60g",kcal:240,prot:6},{name:"Quinoa cocida 200g",kcal:220,prot:8}]),
+  i("4 huevos revueltos",280,28,[{name:"3 huevos + 2 claras",kcal:250,prot:26},{name:"Pechuga de pavo 100g",kcal:135,prot:28},{name:"Tofu revuelto 200g",kcal:200,prot:18}]),
+  i("Café negro",5,0,ALT_CAFE)
+]),
+m("sam","Snack AM",285,[
+  i("Cuajada 150g",165,17,[{name:"Yogur griego 200g",kcal:150,prot:18},{name:"Requesón 150g",kcal:130,prot:15},{name:"Skyr 150g",kcal:130,prot:20}]),
+  i("Almendras 20g",120,4,[{name:"Maní 20g",kcal:120,prot:5},{name:"Marañones 20g",kcal:115,prot:3},{name:"Semillas de girasol 20g",kcal:115,prot:4}]),
+  i("Manzana ½",35,0,[{name:"Fresas 100g",kcal:35,prot:1},{name:"Mandarina 1 ud",kcal:35,prot:1},{name:"Kiwi 1 ud",kcal:42,prot:1}])
+]),
+m("alm","Almuerzo",875,[
+  i("Res magra 180g",300,45,[{name:"Pechuga de pollo 200g",kcal:330,prot:62},{name:"Cerdo lomo 180g",kcal:270,prot:38},{name:"Muslo de pollo 200g",kcal:300,prot:44}]),
+  i("Arroz blanco 1 taza",200,4,ALT_LUNCH_CARB),
+  i("Frijoles ½ taza",115,8,ALT_LEG),
+  i("Aguacate ¼",80,1,[{name:"Aceite de oliva 1 cda",kcal:120,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Maní 20g",kcal:120,prot:5}]),
+  i("Brócoli al vapor",55,5,ALT_VEG),
+  i("Jugo de naranja natural",115,2,[{name:"Agua con limón",kcal:5,prot:0},{name:"Jugo de maracuyá",kcal:35,prot:1},{name:"Agua",kcal:0,prot:0}])
+]),
+m("spm","Snack PM",310,[
+  i("Maní 30g",175,8,[{name:"Almendras 25g",kcal:145,prot:5},{name:"Nueces mixtas 25g",kcal:155,prot:4},{name:"Marañones 25g",kcal:145,prot:4}]),
+  i("Banano",100,1,ALT_FRUIT),
+  i("Agua",0,0,[{name:"Té verde sin azúcar",kcal:0,prot:0},{name:"Agua con limón",kcal:5,prot:0},{name:"Agua mineral",kcal:0,prot:0}])
+]),
+m("cen","Cena",740,[
+  i("Pechuga de pollo 180g",295,55,ALT_DIN_PROT),
+  i("Papa cocida mediana",150,3,ALT_DIN_CARB),
+  i("Zanahoria + brócoli",70,4,ALT_VEG),
+  i("Aceite de oliva 1 cda",120,0,[{name:"Aguacate ⅛",kcal:40,prot:0},{name:"Queso costeño 25g",kcal:80,prot:6},{name:"Mantequilla de maní",kcal:95,prot:4}]),
+  i("Ensalada verde",35,2,[{name:"Pepino + tomate",kcal:30,prot:1},{name:"Rúcula con limón",kcal:20,prot:2},{name:"Lechuga + cebolla",kcal:25,prot:1}])
+])]
+];
+
+// Build meals for a given date
+function getMeals(date){
+  const off=dayOffset(date);
+  if(off<0||off>=TOTAL_DAYS)return null;
+  const tIdx=((off%14)+14)%14;
+  const phase=getPhase(off);
+  const tmpl=TEMPLATES[tIdx];
+  if(phase!==2)return tmpl;
+  // Phase 2: add bonus item to almuerzo
+  return tmpl.map(meal=>{
+    if(meal.id!=="alm")return meal;
+    return{...meal,kcal:meal.kcal+100,items:[...meal.items,{...FASE2_BONUS,isBonus:true}]};
+  });
+}
+
+function getLunchPreview(date){
+  const off=dayOffset(date);
+  if(off<0||off>=TOTAL_DAYS)return "Fuera del plan";
+  const tIdx=((off%14)+14)%14;
+  const alm=TEMPLATES[tIdx][2];
+  const prot=alm.items[0].name;
+  const carb=alm.items[1].name;
+  return`${prot} · ${carb}`;
+}
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+const LS="sg_v1";
+function loadLS(){try{const r=localStorage.getItem(LS);if(r)return JSON.parse(r);}catch(e){}return{};}
+function saveLS(s){try{localStorage.setItem(LS,JSON.stringify(s));}catch(e){}}
+
+// ── COMPONENTS ───────────────────────────────────────────────────────────────
+function Dot({state,size=9}){
+  const colors={complete:"var(--accent)",partial:"#E8C158",none:"rgba(255,255,255,0.2)",future:"rgba(255,255,255,0.15)"};
+  const shadow=state==="complete"?"0 0 6px var(--accent-glow)":"none";
+  return<span className="dot" style={{width:size,height:size,background:colors[state]||colors.none,boxShadow:shadow}}/>;
+}
+
+function CheckIcon(){
+  return<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2.5 6.2 5 8.7l4.5-5.4" stroke="#07130C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>;
+}
+
+function CalIcon(){
+  return<svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+    <rect x="2" y="3.2" width="13" height="11.5" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M2 7h13" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M5.5 1.8v2.4M11.5 1.8v2.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>;
+}
+
+function ScaleIcon(){
+  return<svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+    <rect x="1.8" y="1.8" width="13.4" height="13.4" rx="3.2" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M5.2 6.5a3.8 3.8 0 0 1 6.6 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+    <path d="M8.5 6.2 10 4.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  </svg>;
+}
+
+function BackIcon(){
+  return<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+    <path d="M11.5 3.5 6 9l5.5 5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>;
+}
+
+// ── REPLACE SHEET ────────────────────────────────────────────────────────────
+function ReplaceSheet({meal,item,currentName,onUse,onClose}){
+  const[sel,setSel]=useState(null);
+  const opts=[{name:item.name,kcal:item.kcal,prot:item.prot,original:true},...(item.alts||[])].filter(o=>o.name!==currentName);
+  return(
+    <div className="backdrop" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="grab"/>
+        <div className="shead">
+          <h3 className="stitle">Reemplazar ingrediente</h3>
+          <button className="sclose" onClick={onClose}>✕</button>
+        </div>
+        <p className="ssub"><span className="scurrent">{currentName}</span> · {meal.name} · equivalentes</p>
+        <div className="altlist">
+          {opts.map(alt=>(
+            <button key={alt.name} className={"alt"+(sel===alt.name?" sel":"")} onClick={()=>setSel(alt.name)}>
+              <span className="alt-radio"/>
+              <span className="alt-name">{alt.name}{alt.original?<span className="alt-orig"> · original</span>:null}</span>
+              <span className="alt-macros">{alt.kcal} kcal · {alt.prot}g prot</span>
+            </button>
+          ))}
+        </div>
+        <button className="btn" disabled={!sel} onClick={()=>{onUse(sel);onClose();}}>Usar este hoy</button>
+      </div>
+    </div>
+  );
+}
+
+// ── WEIGHT CHART ─────────────────────────────────────────────────────────────
+function WeightChart({weights}){
+  if(weights.length<2)return<div style={{textAlign:"center",color:"var(--txt2)",fontSize:13,padding:"24px 0"}}>Registra al menos 2 pesajes para ver la gráfica</div>;
+  const W=280,H=84,PX=10,PY=10;
+  const kgs=weights.map(w=>w.kg);
+  const min=Math.min(...kgs)-0.3,max=Math.max(...kgs)+0.3;
+  const range=max-min||1;
+  const pts=weights.map((w,i)=>({
+    x:PX+(i/Math.max(weights.length-1,1))*(W-PX*2),
+    y:PY+(1-(w.kg-min)/range)*(H-PY*2)
+  }));
+  const path=pts.map((p,i)=>(i===0?"M":"L")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");
+  const last=pts[pts.length-1];
+  return(
+    <div className="chart-wrap">
+      <svg viewBox={"0 0 "+W+" "+H} style={{width:"100%",height:H,display:"block"}} preserveAspectRatio="none">
+        <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        {pts.slice(0,-1).map((p,i)=><circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#0B120E" stroke="rgba(255,255,255,0.35)" strokeWidth="1.5"/>)}
+        <circle cx={last.x} cy={last.y} r="3.5" fill="var(--accent)"/>
+      </svg>
+      <div className="chart-axis">
+        <span>{weights[0].date}</span>
+        <span>{weights[weights.length-1].date}</span>
+      </div>
+    </div>
+  );
+}
+
+// ── WEIGHT SHEET ─────────────────────────────────────────────────────────────
+function weightStatus(ws){
+  if(ws.length<2)return{msg:"Registra tu peso cada lunes",tone:"neutral"};
+  const last=ws[ws.length-1].kg;
+  const prev=ws[ws.length-2].kg;
+  const d=last-prev; // slowgain = gaining
+  if(d>=0.2&&d<=0.5)return{msg:"Perfecto — ganancia ideal",tone:"good"};
+  if(d>0&&d<0.2)return{msg:"Sube un poco las porciones",tone:"warn"};
+  if(d>0.5)return{msg:"Modera un poco — puede ser grasa",tone:"warn"};
+  return{msg:"Aumenta las porciones",tone:"bad"};
+}
+
+function WeightSheet({weights,onAdd,onClose,dateStr}){
+  const[kg,setKg]=useState("");
+  const st=weightStatus(weights);
+  const lastKg=weights.length?weights[weights.length-1].kg:72;
+  const toneColor={good:"var(--accent)",warn:"#E8C158",bad:"#E06060",neutral:"var(--txt2)"}[st.tone];
+  const save=()=>{
+    const v=parseFloat(String(kg).replace(",","."));
+    if(!isNaN(v)&&v>30&&v<250){onAdd({date:dateStr,kg:v});setKg("");}
+  };
+  return(
+    <div className="backdrop" onClick={onClose}>
+      <div className="sheet" onClick={e=>e.stopPropagation()}>
+        <div className="grab"/>
+        <div className="shead">
+          <h3 className="stitle">Registro de peso</h3>
+          <button className="sclose" onClick={onClose}>✕</button>
+        </div>
+        <div className="w-row">
+          <div className="w-inp-wrap">
+            <input className="w-inp" type="number" inputMode="decimal" step="0.1" placeholder={String(lastKg)} value={kg} onChange={e=>setKg(e.target.value)}/>
+            <span className="w-unit">kg</span>
+          </div>
+          <span className="w-date">Hoy · {dateStr}</span>
+          <button className="btn btn-sm" disabled={!kg} onClick={save}>Guardar</button>
+        </div>
+        <WeightChart weights={weights}/>
+        <div className="wstatus" style={{color:toneColor}}>
+          <Dot state={st.tone==="good"?"complete":st.tone==="neutral"?"none":"partial"} size={7}/>
+          {st.msg}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── WEEK SCREEN ───────────────────────────────────────────────────────────────
+function WeekScreen({todayStatus,todayDate,completedByDate,onBack}){
+  const tOff=dayOffset(todayDate);
+  const wkStart=new Date(todayDate);wkStart.setDate(wkStart.getDate()-wkStart.getDay()+1); // Monday
+  const days=Array.from({length:7},(_,k)=>addDays(wkStart,k));
+  const wk=weekNum(tOff);
+  return(
+    <div className="wkscreen">
+      <header className="wkhdr">
+        <button className="ibtn" onClick={onBack}><BackIcon/></button>
+        <div>
+          <h1 className="wktitle">Esta semana</h1>
+          <span className="wksub">Semana {wk} de 12 · Jun–Ago 2026</span>
+        </div>
+      </header>
+      <div className="wkrow">
+        {days.map(d=>{
+          const off=dayOffset(d);
+          const isToday=off===tOff;
+          const inPlan=off>=0&&off<TOTAL_DAYS;
+          const dateKey=d.toISOString().slice(0,10);
+          const comp=completedByDate[dateKey]||{};
+          const meals=inPlan?getMeals(d):null;
+          const total=meals?meals.length:0;
+          const done=total?Object.values(comp).filter(Boolean).length:0;
+          let st="future";
+          if(!inPlan)st="out";
+          else if(isToday)st=todayStatus;
+          else if(off<tOff)st=done===total&&total>0?"complete":done>0?"partial":"none";
+          const{day,date}=fmtShort(d);
+          const preview=inPlan?getLunchPreview(d):"";
+          return(
+            <article key={dateKey} className={"wkcard"+(isToday?" today":"")+(!inPlan?" offplan":"")}>
+              <div className="wktop"><span className="wkday">{day}</span><Dot state={st}/></div>
+              <span className="wkdate">{date}</span>
+              <p className="wkpreview">{preview}</p>
+              <span className="wkstate">{isToday?"Hoy":off<tOff?(done===total&&total>0?"Completado":done>0?"Parcial":"Sin registrar"):"Próximo"}</span>
+            </article>
+          );
+        })}
+      </div>
+      <p className="hint">Desliza para ver toda la semana</p>
+    </div>
+  );
+}
+
+// ── TODAY SCREEN ──────────────────────────────────────────────────────────────
+function TodayScreen({date,meals,completed,onToggle,replacements,onTapIng,todayStatus,onOpenWeek,onOpenWeight,totalKcal}){
+  const off=dayOffset(date);
+  const phase=getPhase(off);
+  const wk=weekNum(off);
+  const prog=Math.round((off/TOTAL_DAYS)*100);
+  const semLabel={complete:"Día completado",partial:"En progreso",none:"Sin empezar"}[todayStatus];
+  return(
+    <>
+      <header className="hdr">
+        <div className="hdr-row">
+          <h1 className="hdate">{fmtFull(date)}</h1>
+          <div className="hicons">
+            <button className="ibtn" onClick={onOpenWeek} title="Vista semanal"><CalIcon/></button>
+            <button className="ibtn" onClick={onOpenWeight} title="Registrar peso"><ScaleIcon/></button>
+          </div>
+        </div>
+        <div className="hrow2">
+          <button className="badge" onClick={onOpenWeek}>Semana {wk} de 12</button>
+          <div className="pbar"><div className="pfill" style={{width:prog+"%"}}/></div>
+        </div>
+      </header>
+      <div className="phase-row">
+        <span className={"phase-pill phase-"+phase}>FASE {phase}</span>
+        <span className="phase-sub">{phase===2?"2,870 kcal · +½ taza arroz":"2,770 kcal"} · Día {off+1} de {TOTAL_DAYS}</span>
+      </div>
+      <main className="meals">
+        {meals.map(meal=>{
+          const done=!!completed[meal.id];
+          return(
+            <article key={meal.id} className={"mcard"+(done?" done":"")}>
+              <button className="checkwrap" onClick={()=>onToggle(meal.id)}>
+                <span className={"check"+(done?" on":"")}><CheckIcon/></span>
+              </button>
+              <div className="mbody">
+                <h2 className="mname">{meal.name}</h2>
+                <p className="mitems">
+                  {meal.items.map((item,idx)=>{
+                    const key=meal.id+":"+idx;
+                    const cur=replacements[key]||item.name;
+                    const swapped=cur!==item.name;
+                    return(
+                      <span key={idx}>
+                        {idx>0?<span className="sep"> · </span>:null}
+                        <button className={"ing"+(swapped?" swapped":"")+(item.isBonus?" bonus":"")} onClick={()=>onTapIng(meal,idx)}>{cur}</button>
+                      </span>
+                    );
+                  })}
+                </p>
+              </div>
+              <span className="mkcal">{meal.kcal} kcal</span>
+            </article>
+          );
+        })}
+      </main>
+      <footer className="foot">
+        <div className="foot-l">
+          <span className="foot-lbl">Total del día</span>
+          <span><span className="foot-val">{totalKcal.toLocaleString("es")}</span><span className="foot-unit">kcal</span></span>
+        </div>
+        <div className="sem"><Dot state={todayStatus} size={8}/>{semLabel}</div>
+      </footer>
+    </>
+  );
+}
+
+// ── OUT OF PLAN SCREEN ────────────────────────────────────────────────────────
+function OutOfPlan({date}){
+  const off=dayOffset(date);
+  return(
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",flex:1,padding:"40px 32px",textAlign:"center",gap:12}}>
+      <div style={{fontSize:40}}>🏁</div>
+      {off<0
+        ?<><p style={{fontSize:18,fontWeight:700,margin:0}}>El plan empieza el 10 de junio</p><p style={{fontSize:13,color:"var(--txt2)",margin:0}}>Vuelve en unos días</p></>
+        :<><p style={{fontSize:18,fontWeight:700,margin:0}}>Plan completado</p><p style={{fontSize:13,color:"var(--txt2)",margin:0}}>¡Lograste los 83 días de slowgain!</p></>
+      }
+    </div>
+  );
+}
+
+// ── MAIN APP ──────────────────────────────────────────────────────────────────
+function App(){
+  const[view,setView]=useState("today");
+  const[state,setState]=useState(()=>loadLS());
+  const td=useMemo(()=>todayDate(),[]);
+  const dateKey=td.toISOString().slice(0,10);
+  const dateStr=fmtShort(td).date;
+
+  const completed=(state[dateKey]&&state[dateKey].completed)||{};
+  const replacements=(state[dateKey]&&state[dateKey].replacements)||{};
+  const weights=state.weights||[];
+  const completedByDate=useMemo(()=>{
+    const r={};
+    Object.entries(state).forEach(([k,v])=>{if(k!=="weights"&&v&&v.completed)r[k]=v.completed;});
+    return r;
+  },[state]);
+
+  const[replaceTarget,setReplaceTarget]=useState(null);
+  const[weightOpen,setWeightOpen]=useState(false);
+
+  const meals=useMemo(()=>getMeals(td),[td]);
+  const totalKcal=meals?meals.reduce((s,m)=>s+m.kcal,0):0;
+
+  const setDay=up=>{
+    setState(s=>{
+      const day=s[dateKey]||{};
+      const next={...s,[dateKey]:{...day,...up}};
+      saveLS(next);
+      return next;
+    });
+  };
+
+  const toggle=id=>setDay({completed:{...completed,[id]:!completed[id]}});
+
+  const tapIng=(meal,idx)=>setReplaceTarget({meal,itemIdx:idx});
+
+  const useAlt=name=>{
+    const{meal,itemIdx}=replaceTarget;
+    const key=meal.id+":"+itemIdx;
+    const orig=meal.items[itemIdx].name;
+    const next={...replacements};
+    if(name===orig)delete next[key];else next[key]=name;
+    setDay({replacements:next});
+  };
+
+  const addWeight=entry=>{
+    setState(s=>{
+      const ws=(s.weights||[]).filter(w=>w.date!==entry.date).concat(entry);
+      const next={...s,weights:ws};
+      saveLS(next);
+      return next;
+    });
+  };
+
+  const doneCount=meals?meals.filter(ml=>completed[ml.id]).length:0;
+  const todayStatus=!meals?"none":doneCount===meals.length?"complete":doneCount>0?"partial":"none";
+
+  const off=dayOffset(td);
+  const inPlan=off>=0&&off<TOTAL_DAYS;
+
+  return(
+    <div className="app">
+      {view==="week"?(
+        <WeekScreen todayStatus={todayStatus} todayDate={td} completedByDate={completedByDate} onBack={()=>setView("today")}/>
+      ):!inPlan?(
+        <OutOfPlan date={td}/>
+      ):(
+        <TodayScreen
+          date={td} meals={meals} completed={completed}
+          onToggle={toggle} replacements={replacements}
+          onTapIng={tapIng} todayStatus={todayStatus}
+          onOpenWeek={()=>setView("week")} onOpenWeight={()=>setWeightOpen(true)}
+          totalKcal={totalKcal}
+        />
+      )}
+      {replaceTarget&&meals&&(()=>{
+        const item=replaceTarget.meal.items[replaceTarget.itemIdx];
+        const key=replaceTarget.meal.id+":"+replaceTarget.itemIdx;
+        return<ReplaceSheet meal={replaceTarget.meal} item={item} currentName={replacements[key]||item.name} onUse={useAlt} onClose={()=>setReplaceTarget(null)}/>;
+      })()}
+      {weightOpen&&<WeightSheet weights={weights} onAdd={addWeight} onClose={()=>setWeightOpen(false)} dateStr={dateStr}/>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
