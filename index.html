@@ -253,8 +253,9 @@ const F2_ARROZ_INT={name:"Arroz integral ½ taza",kcal:108,prot:2};
 const F2_PASTA={name:"Pasta integral ½ taza",kcal:100,prot:3};
 const F2_PAPA={name:"Papa pequeña cocida",kcal:100,prot:2};
 
-// 14-day rotation. Each = array of 5 meals [des,sam,alm,spm,cen]
-const TEMPLATES=[
+// 14-day rotation, authored as 5 slots [des,sam,alm,spm,cen] and merged
+// below into 3 comidas (regla del cut: solo 3 comidas al día).
+const RAW5=[
 // ── T0 ─────────────────────────────────────────────────────────────────────
 [m("des","Desayuno",425,[
   i("3 huevos revueltos",210,21,ALT_EGGS),
@@ -665,6 +666,14 @@ m("cen","Cena",540,[
 ])]
 ];
 
+// Cut = 3 comidas: Snack AM se funde en el desayuno y Snack PM en la cena,
+// conservando las kcal y la proteína del día.
+const TEMPLATES=RAW5.map(([des,sam,alm,spm,cen])=>[
+  m("des","Desayuno",des.kcal+sam.kcal,[...des.items,...sam.items]),
+  alm,
+  m("cen","Cena",cen.kcal+spm.kcal,[...cen.items,...spm.items])
+]);
+
 // Build meals for a given date
 function getMeals(date){
   const off=dayOffset(date);
@@ -690,7 +699,7 @@ function getLunchPreview(date){
   const off=dayOffset(date);
   if(off<0||off>=TOTAL_DAYS)return "Fuera del plan";
   const tIdx=((off%14)+14)%14;
-  const alm=TEMPLATES[tIdx][2];
+  const alm=TEMPLATES[tIdx][1];
   const prot=alm.items[0].name;
   const carb=alm.items[1].name;
   return`${prot} · ${carb}`;
